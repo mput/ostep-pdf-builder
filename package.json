@@ -1,0 +1,46 @@
+{
+  "name": "ostep-pdf-builder",
+  "version": "0.0.1",
+  "description": "Loads chapters of Operating Systems: Three Easy Pieces book from official site, and merge it to one pdf with table of content.",
+  "main": "./src/index.js",
+  "engines": {
+    "node": "8"
+  },
+  "bin": {
+    "ostep-load": "./dist/bin/ostep-load.js"
+  },
+  "scripts": {
+    "test": "jest",
+    "eslint": "eslint .",
+    "start": "babel-node ./src/bin/ostep-load.js",
+    "build": "NODE_ENV=production babel src --out-dir dist --source-maps inline",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ostep",
+    "pdftk",
+    "pdf"
+  ],
+  "author": "mPut",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "cheerio": "^1.0.0-rc.2",
+    "lodash": "^4.17.11"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.1.2",
+    "@babel/core": "^7.1.2",
+    "@babel/node": "^7.0.0",
+    "@babel/preset-env": "^7.1.0",
+    "babel-eslint": "^10.0.1",
+    "eslint": "^5.6.1",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-babel": "^5.2.1",
+    "eslint-plugin-flowtype": "^2.50.3",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-jest": "^21.24.1",
+    "flow-bin": "^0.82.0",
+    "jest": "^23.6.0"
+  }
+}
