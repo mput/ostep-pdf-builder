@@ -13,7 +13,7 @@
     "test": "jest",
     "eslint": "eslint .",
     "start": "babel-node ./src/bin/ostep-load.js",
-    "build": "NODE_ENV=production babel src --out-dir dist --source-maps inline",
+    "build": "rm -rf ./dist && NODE_ENV=production babel src --out-dir dist --source-maps inline",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
