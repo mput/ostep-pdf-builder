@@ -2,4 +2,9 @@
 
 import main from '..';
 
-main().then(() => console.log('Done!')).catch(err => console.log(err));
+main()
+  .then(() => console.log('Done!'))
+  .catch((err) => {
+    console.error('%s', err);
+    process.exit(1);
+  });
