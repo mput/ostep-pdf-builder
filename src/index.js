@@ -1,4 +1,3 @@
-
 import fs from 'fs';
 import path from 'path';
 import url from 'url';
@@ -9,11 +8,9 @@ import _ from 'lodash';
 
 const fsPromises = fs.promises;
 
-export default async (ostepLink, tempFolder) => {
+export default async (ostepLink) => {
   const ostepPageLink = ostepLink || 'http://pages.cs.wisc.edu/~remzi/OSTEP/';
-  const partsFolderName = tempFolder || 'temp_book_parts';
   const currentDir = './';
-  const partsFolderPath = path.resolve(currentDir, partsFolderName);
   const outputFileName = 'Operating_Systems:_Three_Easy_Pieces.pdf';
 
   const getBookParts = (html) => {
@@ -35,15 +32,17 @@ export default async (ostepLink, tempFolder) => {
     return (_.flatten(_.zip(...rows))).filter(elm => !!elm);
   };
 
-  const downloadParts = (fileNames) => {
-    const loadFile = async (fileName) => {
-      const href = url.resolve(ostepPageLink, fileName);
+  const addDataBuffers = (bookParts) => {
+    const loadFile = async (part) => {
+      if (!part.fileName) return { ...part, data: null };
+      const href = url.resolve(ostepPageLink, part.fileName);
       const { data } = await axios({ method: 'get', url: href, responseType: 'arraybuffer' });
-      const filePath = path.resolve(partsFolderPath, fileName);
-      await fsPromises.writeFile(filePath, data);
-      console.log('Downloaded file %s', fileName);
+      // const filePath = path.resolve(partsFolderPath, part);
+      // await fsPromises.writeFile(filePath, data);
+      console.log('Downloaded file %s', part.fileName);
+      return { ...part, data };
     };
-    return Promise.all(fileNames.map(fileName => loadFile(fileName)));
+    return Promise.all(bookParts.map(loadFile));
   };
 
   const addPageCount = (bookPartsObjects) => {
@@ -54,9 +53,8 @@ export default async (ostepLink, tempFolder) => {
     };
     const getPageCount = async (part) => {
       if (!part.fileName) return { ...part, pageCount: 0 };
-      const partPath = path.resolve(partsFolderPath, part.fileName);
       const pageCount = await pdftk
-        .input(partPath)
+        .input(part.data)
         .dumpData()
         .output()
         .then((dataBuffer) => {
@@ -84,10 +82,10 @@ export default async (ostepLink, tempFolder) => {
   };
 
 
-  const mergePdf = (fileNames, bookMeta) => {
-    const pathsToPdfParts = fileNames.map(fileName => path.resolve(partsFolderPath, fileName));
+  const mergePdf = (bookParts, bookMeta) => {
+    const partsDataBuffers = bookParts.filter(({ data }) => !!data).map(({ data }) => data);
     return pdftk
-      .input(pathsToPdfParts)
+      .input(partsDataBuffers)
       .cat()
       .output()
       .then((buf) => {
@@ -100,22 +98,11 @@ export default async (ostepLink, tempFolder) => {
 
 
   const { data } = await axios.get(ostepPageLink);
-  const bookPartsObjects = getBookParts(data);
-  const fileNames = bookPartsObjects
-    .filter(({ fileName }) => !!fileName)
-    .map(({ fileName }) => fileName);
-  console.log('Books consists of %s parts, and %s pdf-files', bookPartsObjects.length, bookPartsObjects.filter(({ fileName }) => !!fileName).length);
-  console.log('Book parts will be sved to: \n%s ', partsFolderPath);
-  await fsPromises.mkdir(partsFolderPath).catch((err) => {
-    if (err.code === 'EEXIST') {
-      console.log('Folder already exist.');
-    } else {
-      throw err;
-    }
-  });
-  await downloadParts(fileNames);
-  const bookPartsWithPageCount = await addPageCount(bookPartsObjects);
+  const bookParts = getBookParts(data);
+  console.log('Books consists of %s bookmark, and %s pdf-files', bookParts.length, bookParts.filter(({ fileName }) => !!fileName).length);
+  const bookPartsWithDataBuf = await addDataBuffers(bookParts);
+  const bookPartsWithPageCount = await addPageCount(bookPartsWithDataBuf);
   const { bookPartsWithPageNumber, numberOfPages } = await addPageNumber(bookPartsWithPageCount);
   const bookMeta = createBookMeta(bookPartsWithPageNumber, numberOfPages);
-  await mergePdf(fileNames, bookMeta);
+  await mergePdf(bookPartsWithPageNumber, bookMeta);
 };
