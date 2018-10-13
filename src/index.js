@@ -46,14 +46,14 @@ export default async (ostepLink, tempFolder) => {
     return Promise.all(fileNames.map(fileName => loadFile(fileName)));
   };
 
-  const addPageNumber = (bookPartsObjects) => {
+  const addPageCount = (bookPartsObjects) => {
     const extractPageNumber = (dumpData) => {
       const regexp = /^NumberOfPages:\s+(\d+)$/m;
       const match = dumpData.match(regexp);
       return match ? Number(match[1]) : null;
     };
     const getPageCount = async (part) => {
-      if (!part.fileName) return part;
+      if (!part.fileName) return { ...part, pageCount: 0 };
       const partPath = path.resolve(partsFolderPath, part.fileName);
       const pageCount = await pdftk
         .input(partPath)
@@ -68,12 +68,34 @@ export default async (ostepLink, tempFolder) => {
     return Promise.all(bookPartsObjects.map(getPageCount));
   };
 
-  const mergePdf = (fileNames) => {
+  const addPageNumber = bookPartsObjects => bookPartsObjects.reduce((acc, part) => {
+    const partWithPageNumber = { ...part, pageNumber: acc.numberOfPages };
+    const numberOfPages = acc.numberOfPages + part.pageCount;
+    return {
+      bookPartsWithPageNumber: [...acc.bookPartsWithPageNumber, partWithPageNumber],
+      numberOfPages,
+    };
+  }, { bookPartsWithPageNumber: [], numberOfPages: 1 });
+
+  const createBookMeta = (bookPartsObjects, numberOfPages) => {
+    const bookmaks = bookPartsObjects.map(part => `BookmarkBegin\nBookmarkTitle: ${part.name}\nBookmarkLevel: ${part.chapterBegin ? 1 : 2}\nBookmarkPageNumber: ${part.pageNumber}`);
+    return { Author: 'Remzi Arpaci', producer: `pdftk\nNumberOfPages: ${numberOfPages}\n${bookmaks.join('\n')}` }; // dirty hack to embed bookmark info to the end of metaInfo
+    // TODO pull request to node-pdftk, add bookmark support.
+  };
+
+
+  const mergePdf = (fileNames, bookMeta) => {
     const pathsToPdfParts = fileNames.map(fileName => path.resolve(partsFolderPath, fileName));
     return pdftk
       .input(pathsToPdfParts)
       .cat()
-      .output(path.resolve(currentDir, outputFileName));
+      .output()
+      .then((buf) => {
+        pdftk
+          .input(buf)
+          .updateInfo(bookMeta)
+          .output(path.resolve(currentDir, outputFileName));
+      });
   };
 
 
@@ -92,7 +114,8 @@ export default async (ostepLink, tempFolder) => {
     }
   });
   await downloadParts(fileNames);
-  const bookPartsWithPageNumber = await addPageNumber(bookPartsObjects);
-  console.log(bookPartsWithPageNumber);
-  await mergePdf(fileNames);
+  const bookPartsWithPageCount = await addPageCount(bookPartsObjects);
+  const { bookPartsWithPageNumber, numberOfPages } = await addPageNumber(bookPartsWithPageCount);
+  const bookMeta = createBookMeta(bookPartsWithPageNumber, numberOfPages);
+  await mergePdf(fileNames, bookMeta);
 };
