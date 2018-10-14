@@ -1,0 +1,13 @@
+sudo: required
+services:
+  - docker
+language: node_js
+node_js:
+  - "8"
+before_script:
+  - make docker-build
+script:
+  - make docker-run-prod
+  - make test
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT

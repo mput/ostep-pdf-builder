@@ -2,7 +2,9 @@ docker-run-dev:
 	docker run -v "$(PWD):/code" -it ostep-pdf-builder bash
 docker-run-prod:
 	docker run -v "$(PWD):/data" -it ostep-pdf-builder
-docker-run-prod-bash:
-	docker run -v "$(PWD):/data" -it ostep-pdf-builder bash
 docker-build:
-	docker build -t ostep-pdf-builder .
+	docker build -t mput/ostep-pdf-builder .
+docker-push:
+	docker push mput/ostep-pdf-builder
+test:
+	./__tests__/testscript.sh

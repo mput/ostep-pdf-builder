@@ -21,6 +21,10 @@
     "pdftk",
     "pdf"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mput/ostep-pdf-builder"
+  },
   "author": "mPut",
   "license": "ISC",
   "dependencies": {
