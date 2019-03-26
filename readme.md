@@ -6,7 +6,7 @@ Utility that download PDF parts of **Operating Systems: Three Easy Pieces** from
 
 ## Usage
 ```sh
-docker run --rm -v "$(PWD):/data" -it mput/ostep-pdf-builder
+docker run --rm -v "$(pwd):/data" -it mput/ostep-pdf-builder
 ```
 As result, file "Operating_Systems-Three_Easy_Pieces.pdf" will be created at your current directory.
 [docker-hub](https://cloud.docker.com/u/mput/repository/docker/mput/ostep-pdf-builder)
