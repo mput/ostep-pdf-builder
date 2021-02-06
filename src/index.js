@@ -88,7 +88,7 @@ const mergePdf = (bookParts, bookMeta, fileName) => {
 
 
 export default async (ostepLink) => {
-  const ostepPageLink = ostepLink || 'http://pages.cs.wisc.edu/~remzi/OSTEP/';
+  const ostepPageLink = ostepLink || 'https://pages.cs.wisc.edu/~remzi/OSTEP/';
   const outputFileName = 'Operating_Systems-Three_Easy_Pieces.pdf';
   const { data } = await axios.get(ostepPageLink);
   const bookParts = getBookParts(data);
